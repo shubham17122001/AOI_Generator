@@ -114,7 +114,7 @@ def image_to_base64(image_path):
         return base64.b64encode(img_file.read()).decode("utf-8")
 
 # Convert image to base64 (ensure the correct path)
-image_base64 = image_to_base64("C:/Users/RSDSOffice/Downloads/Antrix_logo.png")  # Update the path to your image
+image_base64 = image_to_base64("Antrix_logo.png")  # Update the path to your image
 
 # HTML to embed the image above the title
 st.markdown(f"""
