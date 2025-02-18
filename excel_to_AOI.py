@@ -9,7 +9,7 @@ import base64
 import geopandas as gpd  # Import geopandas
 
 # Example hardcoded credentials (you could replace this with more secure options)
-USER_CREDENTIALS = {"username": "RSDS", "password": "RSDS@2025"}
+USER_CREDENTIALS = {"username": "admin", "password": "password123"}
 
 # Function to handle login
 def login():
