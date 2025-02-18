@@ -8,6 +8,44 @@ import numpy as np
 import base64
 import geopandas as gpd  # Import geopandas
 
+# Example hardcoded credentials (you could replace this with more secure options)
+USER_CREDENTIALS = {"username": "RSDS", "password": "RSDS@2025"}
+
+# Function to handle login
+def login():
+    # Use custom HTML and CSS for title styling
+    st.markdown("""
+        <style>
+            .login-title {
+                font-size: 24px;  /* Adjust the font size as needed */
+                font-weight: bold;
+                text-align: center;
+            }
+        </style>
+        <div class="login-title">Login to AOI Generator</div>
+    """, unsafe_allow_html=True)
+
+    # Create a form for the username and password
+    with st.form("login_form"):
+
+        # Add a div with custom CSS to move the login box lower
+        st.markdown('<div class="login-box"></div>', unsafe_allow_html=True)
+        
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submit_button = st.form_submit_button("Login")
+        
+
+    if submit_button:
+        if username == USER_CREDENTIALS["username"] and password == USER_CREDENTIALS["password"]:
+            st.session_state["logged_in"] = True  # Store login status in session state
+            st.success("Login successful!")
+            return True
+        else:
+            st.error("Invalid credentials. Please try again.")
+            return False
+    return False
+
 # Function to convert km to degrees
 def km_to_degrees(lat, km, is_latitude=True):
     """Convert km to degrees for latitude or longitude."""
@@ -139,52 +177,68 @@ st.markdown(f"""
     <div class="title">AOI Generator & KMZ/Shapefile Download</div>
 """, unsafe_allow_html=True)
 
-st.write("This app allows you to upload an Excel file, specify AOI dimensions, generate and download KMZ and Shapefile.")
+# Function to display the main content
+def display_main_content():
+    st.write("This app allows you to upload an Excel file, specify AOI dimensions, generate and download KMZ and Shapefile.")
 
-# File Upload Section
-uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
+    # File Upload Section
+    uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
-if uploaded_file:
-    # Read the Excel file
-    df = pd.read_excel(uploaded_file, skiprows=1)
+    if uploaded_file:
+        # Read the Excel file
+        df = pd.read_excel(uploaded_file, skiprows=1)
 
-    # Extracting the file name without extension for KMZ/KML file naming
-    file_name = uploaded_file.name.split('.')[0]
+        # Extracting the file name without extension for KMZ/KML file naming
+        file_name = uploaded_file.name.split('.')[0]
 
-    # Display all data from the Excel file
-    st.subheader(f"Data from {uploaded_file.name}")
-    st.write(df)
+        # Display all data from the Excel file
+        st.subheader(f"Data from {uploaded_file.name}")
+        st.write(df)
 
-    # User input for AOI size
-    st.sidebar.header("AOI Dimensions")
-    aoi_width_km = st.sidebar.number_input("Enter AOI Width (in km):", min_value=1, max_value=100, value=8)
-    aoi_height_km = st.sidebar.number_input("Enter AOI Height (in km):", min_value=1, max_value=100, value=8)
-    
-    st.sidebar.text("Set AOI dimensions and click the button to generate the KMZ and Shapefile.")
+        # User input for AOI size
+        st.sidebar.header("AOI Dimensions")
+        aoi_width_km = st.sidebar.number_input("Enter AOI Width (in km):", min_value=1, max_value=100, value=8)
+        aoi_height_km = st.sidebar.number_input("Enter AOI Height (in km):", min_value=1, max_value=100, value=8)
+        
+        st.sidebar.text("Set AOI dimensions and click the button to generate the KMZ and Shapefile.")
 
-    # Button to generate KMZ and Shapefile
-    if st.sidebar.button("Generate Files"):
-        with st.spinner('Generating KMZ and Shapefile...'):
-            # Generate KML file and polygon data
-            kml_path, polygons = generate_kml(df, aoi_width_km, aoi_height_km, file_name)
+        # Button to generate KMZ and Shapefile
+        if st.sidebar.button("Generate Files"):
+            with st.spinner('Generating KMZ and Shapefile...'):
+                # Generate KML file and polygon data
+                kml_path, polygons = generate_kml(df, aoi_width_km, aoi_height_km, file_name)
 
-            # Create KMZ file
-            kmz_path = create_kmz(kml_path)
+                # Create KMZ file
+                kmz_path = create_kmz(kml_path)
 
-            # Generate shapefile
-            shapefile_path = generate_shapefile(polygons, file_name)
+                # Generate shapefile
+                shapefile_path = generate_shapefile(polygons, file_name)
 
-            # Provide download button for KMZ file
-            with open(kmz_path, "rb") as kmz_file:
-                st.sidebar.download_button("Download KMZ", kmz_file, file_name=f"{file_name}_AOIs_with_centers.kmz")
+                # Provide download button for KMZ file
+                with open(kmz_path, "rb") as kmz_file:
+                    st.sidebar.download_button("Download KMZ", kmz_file, file_name=f"{file_name}_AOIs_with_centers.kmz")
 
-            # Provide download button for shapefile
-            shapefile_zip_path = shapefile_path + '.zip'
-            with zipfile.ZipFile(shapefile_zip_path, 'w') as shapefile_zip:
-                for ext in ['shp', 'shx', 'dbf', 'prj']:
-                    shapefile_zip.write(f"{shapefile_path}.{ext}", os.path.basename(f"{shapefile_path}.{ext}"))
+                # Provide download button for shapefile
+                shapefile_zip_path = shapefile_path + '.zip'
+                with zipfile.ZipFile(shapefile_zip_path, 'w') as shapefile_zip:
+                    for ext in ['shp', 'shx', 'dbf', 'prj']:
+                        shapefile_zip.write(f"{shapefile_path}.{ext}", os.path.basename(f"{shapefile_path}.{ext}"))
 
-            with open(shapefile_zip_path, "rb") as shapefile_zip_file:
-                st.sidebar.download_button("Download Shapefile", shapefile_zip_file, file_name=f"{file_name}_AOIs.zip")
+                with open(shapefile_zip_path, "rb") as shapefile_zip_file:
+                    st.sidebar.download_button("Download Shapefile", shapefile_zip_file, file_name=f"{file_name}_AOIs.zip")
 
-            st.sidebar.success(f"KMZ and Shapefile have been generated!")
+                st.sidebar.success(f"KMZ and Shapefile have been generated!")
+
+# Main logic to handle login and app content
+def main():
+    if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
+        # Show login screen if the user is not logged in
+        if not login():
+            return  # Prevent further code execution if login fails
+    else:
+        # Show the main content if the user is logged in
+        display_main_content()
+
+# Run the app
+if __name__ == "__main__":
+    main()
